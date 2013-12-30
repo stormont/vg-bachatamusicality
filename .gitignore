@@ -1,0 +1,6 @@
+bin/
+*.class
+*.dex
+*.log
+*/gen/
+*/bin/

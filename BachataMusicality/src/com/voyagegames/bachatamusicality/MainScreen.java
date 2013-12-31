@@ -13,6 +13,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
@@ -23,14 +24,16 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 public class MainScreen implements Screen {
 
 	private final TweenManager tweenManager = new TweenManager();
+	private final Stage stage;
+	private final OrthographicCamera camera;
+	private final SpriteBatch batch;
+	private final Texture backgroundTexture;
+	private final Sprite background;
+	private final Texture[] textures = new Texture[4];
+	private final Music[] music = new Music[16];
 
-	private OrthographicCamera camera;
 	private int activeMusic;
-	private Stage stage;
 	private float textureScale;
-	
-	final Texture[] textures = new Texture[4];
-	final Music[] music = new Music[16];
 	
 	public MainScreen() {
 		Tween.registerAccessor(Sprite.class, new SpriteAccessor());
@@ -40,6 +43,10 @@ public class MainScreen implements Screen {
 		final float h = Gdx.graphics.getHeight();
 		
 		camera = new OrthographicCamera(1f, h / w);
+		batch = new SpriteBatch();
+		backgroundTexture = setupTexture("data/graphics/brushed-metal.png");
+		background = new Sprite(backgroundTexture);
+		background.setSize(w, h);
 		
 		textures[0] = setupTexture("data/graphics/guitar.png");
 		textures[1] = setupTexture("data/graphics/bass.png");
@@ -91,6 +98,10 @@ public class MainScreen implements Screen {
 		tweenManager.update(delta);
         stage.act(delta);
 
+        batch.begin();
+        background.draw(batch);
+        batch.end();
+        
         stage.draw();
 	}
 
@@ -98,6 +109,7 @@ public class MainScreen implements Screen {
 	public void resize(final int width, final int height) {
 		stage.setViewport(width, height, true);
 		textureScale = width / textures[0].getWidth() * 0.5f;
+		background.setSize(width, height);
 	}
 
 	@Override
@@ -117,6 +129,8 @@ public class MainScreen implements Screen {
 	@Override
 	public void dispose() {
 		stage.dispose();
+		backgroundTexture.dispose();
+		batch.dispose();
 
 		for (final Texture t : textures) {
 			if (t == null) continue;

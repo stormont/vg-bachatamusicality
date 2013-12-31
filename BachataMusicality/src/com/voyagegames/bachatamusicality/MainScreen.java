@@ -2,6 +2,7 @@ package com.voyagegames.bachatamusicality;
 
 import aurelienribon.tweenengine.Tween;
 import aurelienribon.tweenengine.TweenManager;
+import aurelienribon.tweenengine.equations.Cubic;
 import aurelienribon.tweenengine.equations.Elastic;
 
 import com.badlogic.gdx.Gdx;
@@ -24,10 +25,11 @@ public class MainScreen implements Screen {
 	private final TweenManager tweenManager = new TweenManager();
 
 	private OrthographicCamera camera;
-	private Texture texture;
 	private int activeMusic;
 	private Stage stage;
+	private float textureScale;
 	
+	final Texture[] textures = new Texture[4];
 	final Music[] music = new Music[16];
 	
 	public MainScreen() {
@@ -39,10 +41,17 @@ public class MainScreen implements Screen {
 		
 		camera = new OrthographicCamera(1f, h / w);
 		
-		texture = new Texture(Gdx.files.internal("data/graphics/greendot.png"));
-		texture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
+		textures[0] = setupTexture("data/graphics/guitar.png");
+		textures[1] = setupTexture("data/graphics/bass.png");
+		textures[2] = setupTexture("data/graphics/guira.png");
+		textures[3] = setupTexture("data/graphics/bongos.png");
+		textureScale = w / textures[0].getWidth() * 0.5f;
 
-		final TextureRegion region = new TextureRegion(texture, 0, 0, 128, 128);
+		final TextureRegion[] regions = new TextureRegion[4];
+		
+		for (int i = 0; i < regions.length; i++) {
+			regions[i] = new TextureRegion(textures[i], 0, 0, 128, 128);
+		}
 		
 		music[1] = setupMusic("data/audio/guitar-mono.ogg");
 		music[2] = setupMusic("data/audio/bass-mono.ogg");
@@ -64,13 +73,13 @@ public class MainScreen implements Screen {
 		stage = new Stage();
         Gdx.input.setInputProcessor(stage);
         
-        final float xOffset = stage.getWidth() * 0.25f;
-        final float yOffset = stage.getHeight() * 0.25f;
+        final float xInc = stage.getWidth() * 0.2f;
+        final float yInc = stage.getHeight() * 0.2f;
 		
-		setupActor(region, 0f, yOffset * 1.5f, 0x01, 0f);
-		setupActor(region, xOffset * 2f, yOffset * 1.5f, 0x02, 0.1f);
-		setupActor(region, 0f, yOffset * 0.5f, 0x04, 0.2f);
-		setupActor(region, xOffset * 2f, yOffset * 0.5f, 0x08, 0.3f);
+		setupActor(regions[0], xInc * 1.5f, yInc * 2.5f, 0x01, 0f);
+		setupActor(regions[1], xInc * 3.5f, yInc * 2.5f, 0x02, 0.1f);
+		setupActor(regions[2], xInc * 1.5f, yInc * 1f, 0x04, 0.2f);
+		setupActor(regions[3], xInc * 3.5f, yInc * 1f, 0x08, 0.3f);
 	}
 	
 	@Override
@@ -88,6 +97,7 @@ public class MainScreen implements Screen {
 	@Override
 	public void resize(final int width, final int height) {
 		stage.setViewport(width, height, true);
+		textureScale = width / textures[0].getWidth() * 0.5f;
 	}
 
 	@Override
@@ -96,32 +106,33 @@ public class MainScreen implements Screen {
 	}
 
 	@Override
-	public void hide() {
-		// TODO Auto-generated method stub
-		
-	}
+	public void hide() {}
 
 	@Override
-	public void pause() {
-		// TODO Auto-generated method stub
-		
-	}
+	public void pause() {}
 
 	@Override
-	public void resume() {
-		// TODO Auto-generated method stub
-		
-	}
+	public void resume() {}
 
 	@Override
 	public void dispose() {
 		stage.dispose();
-		texture.dispose();
+
+		for (final Texture t : textures) {
+			if (t == null) continue;
+			t.dispose();
+		}
 		
 		for (final Music m : music) {
 			if (m == null) continue;
 			m.dispose();
 		}
+	}
+	
+	private Texture setupTexture(final String resource) {
+		final Texture t = new Texture(Gdx.files.internal(resource));
+		t.setFilter(TextureFilter.Linear, TextureFilter.Linear);
+		return t;
 	}
 	
 	private Music setupMusic(final String resource) {
@@ -142,7 +153,7 @@ public class MainScreen implements Screen {
 		
 		img.setTouchable(Touchable.enabled);
 		img.setOrigin(x * 0.5f, y * 0.5f);
-		img.setPosition(xOffset, yOffset);
+		img.setPosition(xOffset - x * 0.5f, yOffset - y * 0.5f);
 		img.setScale(0f);
 		img.addListener(new ImageInputListener(img, mask));
 		
@@ -152,7 +163,7 @@ public class MainScreen implements Screen {
 
 	private void setupImageTween(final Image img, final float delay) {
 		Tween.to(img, ImageAccessor.SCALE_XY, 1f)
-			.target(0.5f, 0.5f)
+			.target(0.5f * textureScale, 0.5f * textureScale)
 			.ease(Elastic.OUT)
 			.delay(delay)
 			.start(tweenManager);
@@ -173,7 +184,7 @@ public class MainScreen implements Screen {
 		@Override
 		public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
 			Tween.to(image, ImageAccessor.SCALE_XY, 0.25f)
-				.target(1f, 1f)
+				.target(1f * textureScale, 1f * textureScale)
 				.ease(Elastic.OUT)
 				.start(tweenManager);
 
@@ -183,8 +194,18 @@ public class MainScreen implements Screen {
 			
 			if ((activeMusic & mask) != 0) {
 				activeMusic &= disable;
+
+				Tween.to(image, ImageAccessor.TINT, 0.25f)
+					.target(0.5f, 0.5f, 0.5f)
+					.ease(Cubic.INOUT)
+					.start(tweenManager);
 			} else {
 				activeMusic |= mask;
+
+				Tween.to(image, ImageAccessor.TINT, 0.25f)
+					.target(1f, 1f, 1f)
+					.ease(Cubic.INOUT)
+					.start(tweenManager);
 			}
 			
 			if (activeMusic > 0 && activeMusic < 16) {
@@ -197,7 +218,7 @@ public class MainScreen implements Screen {
 		@Override
 		public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
 			Tween.to(image, ImageAccessor.SCALE_XY, 0.25f)
-				.target(0.5f, 0.5f)
+				.target(0.5f * textureScale, 0.5f * textureScale)
 				.ease(Elastic.OUT)
 				.start(tweenManager);
 

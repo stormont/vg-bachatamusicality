@@ -123,7 +123,7 @@ public class MainScreen implements Screen {
 
 		setupNumberActor(w, h);
 		showNumbers = true;
-		speakNumbers = true;
+		speakNumbers = false;
 	}
 	
 	@Override
@@ -363,6 +363,13 @@ public class MainScreen implements Screen {
 		public NumbersInputListener(final Image image, final boolean vocals) {
 			this.image = image;
 			this.vocals = vocals;
+			
+			if (vocals) {
+				Tween.to(image, ImageAccessor.TINT, 0.25f)
+					.target(0.5f, 0.5f, 0.5f)
+					.ease(Cubic.INOUT)
+					.start(tweenManager);
+			}
 		}
 
 		@Override

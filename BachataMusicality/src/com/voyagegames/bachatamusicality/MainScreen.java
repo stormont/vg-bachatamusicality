@@ -265,6 +265,7 @@ public class MainScreen implements Screen {
         
         if (totalTime >= MUSIC_LENGTH) {
         	totalTime -= MUSIC_LENGTH;
+        	lastCount = -1;
     		switchKey();
         }
         

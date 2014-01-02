@@ -71,8 +71,7 @@ public class MainScreen implements Screen {
 	private boolean showNumbers;
 	private boolean speakNumbers;
 	private int lastCount;
-	
-	BitmapFont font;
+	private Image ghostImage;
 	
 	public MainScreen() {
 		Tween.registerAccessor(Sprite.class, new SpriteAccessor());
@@ -136,8 +135,6 @@ public class MainScreen implements Screen {
 		setupActor(regions[4], xInc * 1.5f, yInc * 1f, SoundType.UNKNOWN, 0.4f, InputListenerType.NUMBER);
 		setupActor(regions[5], xInc * 3.5f, yInc * 1f, SoundType.UNKNOWN, 0.5f, InputListenerType.VOCAL);
 		
-		font = new BitmapFont();
-
 		setupNumberActor(w, h);
 		showNumbers = true;
 		speakNumbers = false;
@@ -262,8 +259,6 @@ public class MainScreen implements Screen {
 			sounds[ord + KEY_OFFSET].setVolume(soundIds[ord + KEY_OFFSET], 0f);
 		}
 	}
-	
-	private Image ghostImage;
 	
 	private void updateCount(final float delta) {
 		if (!soundsReady) return;

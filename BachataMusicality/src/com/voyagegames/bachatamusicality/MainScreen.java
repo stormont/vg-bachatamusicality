@@ -8,6 +8,7 @@ import aurelienribon.tweenengine.equations.Elastic;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.GL10;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
@@ -24,7 +25,13 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 
 public class MainScreen implements Screen {
 
-	private static final int NUMBERS_OFFSET = 5;
+	private static final int NUMBERS_OFFSET = 6;
+	
+	private enum InputListenerType {
+		INSTRUMENT,
+		NUMBER_DISPLAY,
+		NUMBER_VOCAL,
+	}
 	
 	private final TweenManager tweenManager = new TweenManager();
 	private final Stage stage;
@@ -32,14 +39,16 @@ public class MainScreen implements Screen {
 	private final SpriteBatch batch;
 	private final Texture backgroundTexture;
 	private final Sprite background;
-	private final Texture[] textures = new Texture[9];
-	private final Music[] music = new Music[16];
+	private final Texture[] textures = new Texture[10];
 	private final Image[] countActors = new Image[4];
+	private final Music[] music = new Music[16];
+	private final Sound[] sounds = new Sound[4];
 
 	private int activeMusic;
 	private float textureScale;
 	private float totalTime;
 	private boolean showNumbers;
+	private boolean speakNumbers;
 	private int lastCount;
 	
 	BitmapFont font;
@@ -62,10 +71,11 @@ public class MainScreen implements Screen {
 		textures[2] = setupTexture("data/graphics/guira.png");
 		textures[3] = setupTexture("data/graphics/bongos.png");
 		textures[4] = setupTexture("data/graphics/numbers.png");
-		textures[5] = setupTexture("data/graphics/one.png");
-		textures[6] = setupTexture("data/graphics/two.png");
-		textures[7] = setupTexture("data/graphics/three.png");
-		textures[8] = setupTexture("data/graphics/four.png");
+		textures[5] = setupTexture("data/graphics/voice.png");
+		textures[6] = setupTexture("data/graphics/one.png");
+		textures[7] = setupTexture("data/graphics/two.png");
+		textures[8] = setupTexture("data/graphics/three.png");
+		textures[9] = setupTexture("data/graphics/four.png");
 		textureScale = w / textures[0].getWidth() * 0.5f;
 
 		final TextureRegion[] regions = new TextureRegion[NUMBERS_OFFSET];
@@ -91,22 +101,29 @@ public class MainScreen implements Screen {
 		music[15] = setupMusic("data/audio/bongo-guira-bass-guitar-mono.ogg");
 		activeMusic = 15;
 
+		sounds[0] = Gdx.audio.newSound(Gdx.files.internal("data/audio/1.wav"));
+		sounds[1] = Gdx.audio.newSound(Gdx.files.internal("data/audio/2.wav"));
+		sounds[2] = Gdx.audio.newSound(Gdx.files.internal("data/audio/3.wav"));
+		sounds[3] = Gdx.audio.newSound(Gdx.files.internal("data/audio/4.wav"));
+
 		stage = new Stage();
         Gdx.input.setInputProcessor(stage);
         
         final float xInc = stage.getWidth() * 0.2f;
         final float yInc = stage.getHeight() * 0.2f;
 		
-		setupActor(regions[0], xInc * 1.5f, yInc * 3f, 0x01, 0f);
-		setupActor(regions[1], xInc * 3.5f, yInc * 3f, 0x02, 0.1f);
-		setupActor(regions[2], xInc * 1.5f, yInc * 2f, 0x04, 0.2f);
-		setupActor(regions[3], xInc * 3.5f, yInc * 2f, 0x08, 0.3f);
-		setupActor(regions[4], xInc * 1.5f, yInc * 1f, 0, 0.4f);
+		setupActor(regions[0], xInc * 1.5f, yInc * 3f, 0x01, 0f, InputListenerType.INSTRUMENT);
+		setupActor(regions[1], xInc * 3.5f, yInc * 3f, 0x02, 0.1f, InputListenerType.INSTRUMENT);
+		setupActor(regions[2], xInc * 1.5f, yInc * 2f, 0x04, 0.2f, InputListenerType.INSTRUMENT);
+		setupActor(regions[3], xInc * 3.5f, yInc * 2f, 0x08, 0.3f, InputListenerType.INSTRUMENT);
+		setupActor(regions[4], xInc * 1.5f, yInc * 1f, 0, 0.4f, InputListenerType.NUMBER_DISPLAY);
+		setupActor(regions[5], xInc * 3.5f, yInc * 1f, 0, 0.5f, InputListenerType.NUMBER_VOCAL);
 		
 		font = new BitmapFont();
 
 		setupNumberActor(w, h);
 		showNumbers = true;
+		speakNumbers = true;
 	}
 	
 	@Override
@@ -163,6 +180,11 @@ public class MainScreen implements Screen {
 			if (m == null) continue;
 			m.dispose();
 		}
+		
+		for (final Sound s : sounds) {
+			if (s == null) continue;
+			s.dispose();
+		}
 	}
 	
 	private Texture setupTexture(final String resource) {
@@ -182,7 +204,8 @@ public class MainScreen implements Screen {
 			final float xOffset,
 			final float yOffset,
 			final int mask,
-			final float delay) {
+			final float delay,
+			final InputListenerType listenerType) {
 		final Image img = new Image(region);
 		final float x = img.getWidth();
 		final float y = img.getHeight();
@@ -192,10 +215,16 @@ public class MainScreen implements Screen {
 		img.setPosition(xOffset - x * 0.5f, yOffset - y * 0.5f);
 		img.setScale(0f);
 		
-		if (mask == 0) {
-			img.addListener(new NumbersInputListener(img));
-		} else {
+		switch (listenerType) {
+		case INSTRUMENT:
 			img.addListener(new ImageInputListener(img, mask));
+			break;
+		case NUMBER_DISPLAY:
+			img.addListener(new NumbersInputListener(img, false));
+			break;
+		case NUMBER_VOCAL:
+			img.addListener(new NumbersInputListener(img, true));
+			break;
 		}
 		
 		setupImageTween(img, delay);
@@ -245,15 +274,18 @@ public class MainScreen implements Screen {
         if (totalTime > music[activeMusic].getPosition()) totalTime = 0f;
         final int count = (int)Math.floor((totalTime % 2f) * 2f);
         
-        if (showNumbers && lastCount != count) {
-        	if (lastCount < 4) countActors[lastCount].setVisible(false);
-        	final Image img = countActors[count];
-        	img.setVisible(true);
-    		img.setScale(0f);
-			Tween.to(img, ImageAccessor.SCALE_XY, 0.2f)
-				.target(0.5f * textureScale, 0.5f * textureScale)
-				.ease(Elastic.OUT)
-				.start(tweenManager);
+        if (lastCount != count) {
+			if (speakNumbers) sounds[count].play();
+        	if (showNumbers) {
+            	if (lastCount < 4) countActors[lastCount].setVisible(false);
+            	final Image img = countActors[count];
+            	img.setVisible(true);
+        		img.setScale(0f);
+    			Tween.to(img, ImageAccessor.SCALE_XY, 0.2f)
+    				.target(0.5f * textureScale, 0.5f * textureScale)
+    				.ease(Elastic.OUT)
+    				.start(tweenManager);
+        	}
         }
         
         lastCount = count;
@@ -326,9 +358,11 @@ public class MainScreen implements Screen {
 	class NumbersInputListener extends InputListener {
 		
 		private final Image image;
+		private final boolean vocals;
 		
-		public NumbersInputListener(final Image image) {
+		public NumbersInputListener(final Image image, final boolean vocals) {
 			this.image = image;
+			this.vocals = vocals;
 		}
 
 		@Override
@@ -338,22 +372,39 @@ public class MainScreen implements Screen {
 				.ease(Elastic.OUT)
 				.start(tweenManager);
 
-			if (showNumbers) {
-				Tween.to(image, ImageAccessor.TINT, 0.25f)
-					.target(0.5f, 0.5f, 0.5f)
-					.ease(Cubic.INOUT)
-					.start(tweenManager);
-				
-				hideNumbers();
-			} else {
-				Tween.to(image, ImageAccessor.TINT, 0.25f)
-					.target(1f, 1f, 1f)
-					.ease(Cubic.INOUT)
-					.start(tweenManager);
-				countActors[lastCount].setVisible(true);
-			}
+			if (vocals) {
+				if (speakNumbers) {
+					Tween.to(image, ImageAccessor.TINT, 0.25f)
+						.target(0.5f, 0.5f, 0.5f)
+						.ease(Cubic.INOUT)
+						.start(tweenManager);
+				} else {
+					Tween.to(image, ImageAccessor.TINT, 0.25f)
+						.target(1f, 1f, 1f)
+						.ease(Cubic.INOUT)
+						.start(tweenManager);
+				}
 
-			showNumbers = !showNumbers;
+				speakNumbers = !speakNumbers;
+			} else {
+				if (showNumbers) {
+					Tween.to(image, ImageAccessor.TINT, 0.25f)
+						.target(0.5f, 0.5f, 0.5f)
+						.ease(Cubic.INOUT)
+						.start(tweenManager);
+					
+					hideNumbers();
+				} else {
+					Tween.to(image, ImageAccessor.TINT, 0.25f)
+						.target(1f, 1f, 1f)
+						.ease(Cubic.INOUT)
+						.start(tweenManager);
+					countActors[lastCount].setVisible(true);
+				}
+
+				showNumbers = !showNumbers;
+			}
+			
 			return true;
 		}
 

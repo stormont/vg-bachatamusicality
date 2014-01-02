@@ -15,7 +15,6 @@ import com.badlogic.gdx.graphics.GL10;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -31,7 +30,7 @@ public class MainScreen implements Screen {
 
 	private static final int NUMBERS_OFFSET = 6;
 	private static final int KEY_OFFSET = SoundType.UNKNOWN.ordinal() - SoundType.BONGO.ordinal();
-	private static final float MUSIC_LENGTH = 15.97f * 0.5f;
+	private static final float MUSIC_LENGTH = 16f * 0.5f;
 	
 	private enum InputListenerType {
 		INSTRUMENT,

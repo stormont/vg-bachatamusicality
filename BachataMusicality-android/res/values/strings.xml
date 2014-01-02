@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Bachata Musicality</string>
+    <string name="common_problem">Bachata Musicality had a problem and closed</string>
+    <string name="update_available_prompt">An update for this app is available. Would you like to download it now?</string>
+    <string name="update_available_yes">Download now</string>
+    <string name="update_available_no">Maybe later</string>
 </resources>

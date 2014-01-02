@@ -174,14 +174,20 @@ public class MainScreen implements Screen {
 	}
 
 	@Override
-	public void hide() {}
-
-	@Override
-	public void pause() {}
-
-	@Override
 	public void resume() {
 		playMusic();
+	}
+
+	@Override
+	public void hide() {
+		for (final Sound s : sounds) s.stop();
+		hideNumbers();
+	}
+
+	@Override
+	public void pause() {
+		for (final Sound s : sounds) s.stop();
+		hideNumbers();
 	}
 
 	@Override
@@ -232,7 +238,7 @@ public class MainScreen implements Screen {
 		
 		soundsReady = true;
 		totalTime = 0f;
-		lastCount = 5;
+		lastCount = -1;
 		hideNumbers();
 		switchKey();
 	}
@@ -257,6 +263,8 @@ public class MainScreen implements Screen {
 		}
 	}
 	
+	private Image ghostImage;
+	
 	private void updateCount(final float delta) {
 		if (!soundsReady) return;
         totalTime += delta;
@@ -269,9 +277,9 @@ public class MainScreen implements Screen {
         final int count = (int)Math.floor((totalTime % 2f) * 2f);
         
         if (lastCount != count) {
+        	hideNumbers();
 			if (speakNumbers) sounds[count].play();
         	if (showNumbers && unmutedSounds.size() > 0) {
-            	if (lastCount < 4) countActors[lastCount].setVisible(false);
             	final Image img = countActors[count];
             	img.setVisible(true);
         		img.setScale(0f);
@@ -279,6 +287,15 @@ public class MainScreen implements Screen {
     				.target(0.5f * textureScale, 0.5f * textureScale)
     				.ease(Elastic.OUT)
     				.start(tweenManager);
+    			
+    			if (lastCount == -1) {
+    				ghostImage = img;
+    			} else {
+    				if (ghostImage != null) {
+    					ghostImage.setVisible(false);
+    					ghostImage = null;
+    				}
+    			}
         	}
         }
         

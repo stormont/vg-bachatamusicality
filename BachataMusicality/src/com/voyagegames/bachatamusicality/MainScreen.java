@@ -1,5 +1,8 @@
 package com.voyagegames.bachatamusicality;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import aurelienribon.tweenengine.Tween;
 import aurelienribon.tweenengine.TweenManager;
 import aurelienribon.tweenengine.equations.Cubic;
@@ -7,7 +10,6 @@ import aurelienribon.tweenengine.equations.Elastic;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.GL10;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -22,15 +24,31 @@ import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.utils.Timer;
+import com.badlogic.gdx.utils.Timer.Task;
 
 public class MainScreen implements Screen {
 
 	private static final int NUMBERS_OFFSET = 6;
+	private static final int KEY_OFFSET = SoundType.UNKNOWN.ordinal() - SoundType.BONGO.ordinal();
+	private static final float MUSIC_LENGTH = 15.97f * 0.5f;
 	
 	private enum InputListenerType {
 		INSTRUMENT,
-		NUMBER_DISPLAY,
-		NUMBER_VOCAL,
+		NUMBER,
+		VOCAL,
+	}
+	
+	private enum SoundType {
+		ONE,
+		TWO,
+		THREE,
+		FOUR,
+		BONGO,
+		GUIRA,
+		BASS,
+		GUITAR,
+		UNKNOWN,
 	}
 	
 	private final TweenManager tweenManager = new TweenManager();
@@ -41,12 +59,15 @@ public class MainScreen implements Screen {
 	private final Sprite background;
 	private final Texture[] textures = new Texture[10];
 	private final Image[] countActors = new Image[4];
-	private final Music[] music = new Music[16];
-	private final Sound[] sounds = new Sound[4];
-
-	private int activeMusic;
+	private final List<SoundType> mutedSounds = new ArrayList<SoundType>();
+	private final List<SoundType> unmutedSounds = new ArrayList<SoundType>();
+	private final Sound[] sounds = new Sound[12];
+	private final Long[] soundIds = new Long[sounds.length];
+	
 	private float textureScale;
 	private float totalTime;
+	private boolean soundsReady;
+	private boolean firstKey;
 	private boolean showNumbers;
 	private boolean speakNumbers;
 	private int lastCount;
@@ -83,41 +104,37 @@ public class MainScreen implements Screen {
 		for (int i = 0; i < regions.length; i++) {
 			regions[i] = new TextureRegion(textures[i], 0, 0, 128, 128);
 		}
-		
-		music[1] = setupMusic("data/audio/guitar-mono.ogg");
-		music[2] = setupMusic("data/audio/bass-mono.ogg");
-		music[3] = setupMusic("data/audio/bass-guitar-mono.ogg");
-		music[4] = setupMusic("data/audio/guira-mono.ogg");
-		music[5] = setupMusic("data/audio/guira-guitar-mono.ogg");
-		music[6] = setupMusic("data/audio/guira-bass-mono.ogg");
-		music[7] = setupMusic("data/audio/guira-bass-guitar-mono.ogg");
-		music[8] = setupMusic("data/audio/bongo-mono.ogg");
-		music[9] = setupMusic("data/audio/bongo-guitar-mono.ogg");
-		music[10] = setupMusic("data/audio/bongo-bass-mono.ogg");
-		music[11] = setupMusic("data/audio/bongo-bass-guitar-mono.ogg");
-		music[12] = setupMusic("data/audio/bongo-guira-mono.ogg");
-		music[13] = setupMusic("data/audio/bongo-guira-guitar-mono.ogg");
-		music[14] = setupMusic("data/audio/bongo-guira-bass-mono.ogg");
-		music[15] = setupMusic("data/audio/bongo-guira-bass-guitar-mono.ogg");
-		activeMusic = 15;
 
 		sounds[0] = Gdx.audio.newSound(Gdx.files.internal("data/audio/1.wav"));
 		sounds[1] = Gdx.audio.newSound(Gdx.files.internal("data/audio/2.wav"));
 		sounds[2] = Gdx.audio.newSound(Gdx.files.internal("data/audio/3.wav"));
 		sounds[3] = Gdx.audio.newSound(Gdx.files.internal("data/audio/4.wav"));
-
+		sounds[4] = Gdx.audio.newSound(Gdx.files.internal("data/audio/bongo1.wav"));
+		sounds[5] = Gdx.audio.newSound(Gdx.files.internal("data/audio/guira1.wav"));
+		sounds[6] = Gdx.audio.newSound(Gdx.files.internal("data/audio/bass1.wav"));
+		sounds[7] = Gdx.audio.newSound(Gdx.files.internal("data/audio/guitar1.wav"));
+		sounds[8] = Gdx.audio.newSound(Gdx.files.internal("data/audio/bongo2.wav"));
+		sounds[9] = Gdx.audio.newSound(Gdx.files.internal("data/audio/guira2.wav"));
+		sounds[10] = Gdx.audio.newSound(Gdx.files.internal("data/audio/bass2.wav"));
+		sounds[11] = Gdx.audio.newSound(Gdx.files.internal("data/audio/guitar2.wav"));
+		
+		unmutedSounds.add(SoundType.BONGO);
+		unmutedSounds.add(SoundType.BASS);
+		unmutedSounds.add(SoundType.GUITAR);
+		unmutedSounds.add(SoundType.GUIRA);
+		
 		stage = new Stage();
         Gdx.input.setInputProcessor(stage);
         
         final float xInc = stage.getWidth() * 0.2f;
         final float yInc = stage.getHeight() * 0.2f;
 		
-		setupActor(regions[0], xInc * 1.5f, yInc * 3f, 0x01, 0f, InputListenerType.INSTRUMENT);
-		setupActor(regions[1], xInc * 3.5f, yInc * 3f, 0x02, 0.1f, InputListenerType.INSTRUMENT);
-		setupActor(regions[2], xInc * 1.5f, yInc * 2f, 0x04, 0.2f, InputListenerType.INSTRUMENT);
-		setupActor(regions[3], xInc * 3.5f, yInc * 2f, 0x08, 0.3f, InputListenerType.INSTRUMENT);
-		setupActor(regions[4], xInc * 1.5f, yInc * 1f, 0, 0.4f, InputListenerType.NUMBER_DISPLAY);
-		setupActor(regions[5], xInc * 3.5f, yInc * 1f, 0, 0.5f, InputListenerType.NUMBER_VOCAL);
+		setupActor(regions[0], xInc * 1.5f, yInc * 3f, SoundType.GUITAR, 0f, InputListenerType.INSTRUMENT);
+		setupActor(regions[1], xInc * 3.5f, yInc * 3f, SoundType.BASS, 0.1f, InputListenerType.INSTRUMENT);
+		setupActor(regions[2], xInc * 1.5f, yInc * 2f, SoundType.GUIRA, 0.2f, InputListenerType.INSTRUMENT);
+		setupActor(regions[3], xInc * 3.5f, yInc * 2f, SoundType.BONGO, 0.3f, InputListenerType.INSTRUMENT);
+		setupActor(regions[4], xInc * 1.5f, yInc * 1f, SoundType.UNKNOWN, 0.4f, InputListenerType.NUMBER);
+		setupActor(regions[5], xInc * 3.5f, yInc * 1f, SoundType.UNKNOWN, 0.5f, InputListenerType.VOCAL);
 		
 		font = new BitmapFont();
 
@@ -163,7 +180,9 @@ public class MainScreen implements Screen {
 	public void pause() {}
 
 	@Override
-	public void resume() {}
+	public void resume() {
+		playMusic();
+	}
 
 	@Override
 	public void dispose() {
@@ -176,34 +195,111 @@ public class MainScreen implements Screen {
 			t.dispose();
 		}
 		
-		for (final Music m : music) {
-			if (m == null) continue;
-			m.dispose();
-		}
-		
 		for (final Sound s : sounds) {
 			if (s == null) continue;
 			s.dispose();
 		}
 	}
+
+	private void playMusic() {
+    	for (int i = SoundType.BONGO.ordinal(); i < SoundType.UNKNOWN.ordinal(); i++) {
+			sounds[i].stop();
+			sounds[i + KEY_OFFSET].stop();
+		}
+    	
+		long id = sounds[sounds.length - 1].loop(0f);
+		
+		if (id == -1) {
+			Gdx.app.log("MainScreen", "Sounds still loading");
+			Timer.schedule(new Task() {
+				
+			    @Override
+			    public void run() {
+					playMusic();
+			    }
+			    
+			}, 1f);
+			return;
+		}
+		
+		soundIds[sounds.length - 1] = id;
+		soundIds[sounds.length - 1 - KEY_OFFSET] = sounds[sounds.length - 1 - KEY_OFFSET].loop(0f);
+		
+		for (int i = SoundType.BONGO.ordinal(); i < SoundType.UNKNOWN.ordinal() - 1; i++) {
+			soundIds[i] = sounds[i].loop(0f);
+			soundIds[i + KEY_OFFSET] = sounds[i + KEY_OFFSET].loop(0f);
+		}
+		
+		soundsReady = true;
+		totalTime = 0f;
+		lastCount = 5;
+		hideNumbers();
+		switchKey();
+	}
 	
+	private void switchKey() {
+		firstKey = !firstKey;
+		
+		for (int i = SoundType.BONGO.ordinal(); i < SoundType.UNKNOWN.ordinal(); i++) {
+			if (firstKey) {
+				sounds[i].setVolume(soundIds[i], 1f);
+				sounds[i + KEY_OFFSET].setVolume(soundIds[i + KEY_OFFSET], 0f);
+			} else {
+				sounds[i].setVolume(soundIds[i], 0f);
+				sounds[i + KEY_OFFSET].setVolume(soundIds[i + KEY_OFFSET], 1f);
+			}
+		}
+		
+		for (final SoundType st : mutedSounds) {
+			final int ord = st.ordinal();
+			sounds[ord].setVolume(soundIds[ord], 0f);
+			sounds[ord + KEY_OFFSET].setVolume(soundIds[ord + KEY_OFFSET], 0f);
+		}
+	}
+	
+	private void updateCount(final float delta) {
+		if (!soundsReady) return;
+        totalTime += delta;
+        
+        if (totalTime >= MUSIC_LENGTH) {
+        	totalTime -= MUSIC_LENGTH;
+    		switchKey();
+        }
+        
+        final int count = (int)Math.floor((totalTime % 2f) * 2f);
+        
+        if (lastCount != count) {
+			if (speakNumbers) sounds[count].play();
+        	if (showNumbers && unmutedSounds.size() > 0) {
+            	if (lastCount < 4) countActors[lastCount].setVisible(false);
+            	final Image img = countActors[count];
+            	img.setVisible(true);
+        		img.setScale(0f);
+    			Tween.to(img, ImageAccessor.SCALE_XY, 0.1f)
+    				.target(0.5f * textureScale, 0.5f * textureScale)
+    				.ease(Elastic.OUT)
+    				.start(tweenManager);
+        	}
+        }
+        
+        lastCount = count;
+	}
+	
+	private void hideNumbers() {
+		for (final Image img : countActors) img.setVisible(false);
+	}
+
 	private Texture setupTexture(final String resource) {
 		final Texture t = new Texture(Gdx.files.internal(resource));
 		t.setFilter(TextureFilter.Linear, TextureFilter.Linear);
 		return t;
-	}
-	
-	private Music setupMusic(final String resource) {
-		final Music m = Gdx.audio.newMusic(Gdx.files.internal(resource));
-		m.setLooping(true);
-		return m;
 	}
 
 	private void setupActor(
 			final TextureRegion region,
 			final float xOffset,
 			final float yOffset,
-			final int mask,
+			final SoundType soundType,
 			final float delay,
 			final InputListenerType listenerType) {
 		final Image img = new Image(region);
@@ -217,12 +313,12 @@ public class MainScreen implements Screen {
 		
 		switch (listenerType) {
 		case INSTRUMENT:
-			img.addListener(new ImageInputListener(img, mask));
+			img.addListener(new ImageInputListener(img, soundType));
 			break;
-		case NUMBER_DISPLAY:
+		case NUMBER:
 			img.addListener(new NumbersInputListener(img, false));
 			break;
-		case NUMBER_VOCAL:
+		case VOCAL:
 			img.addListener(new NumbersInputListener(img, true));
 			break;
 		}
@@ -253,7 +349,7 @@ public class MainScreen implements Screen {
 		
 		img.setTouchable(Touchable.disabled);
 		img.setOrigin(x * 0.5f, y * 0.5f);
-		img.setPosition(width * 0.5f - x * 0.5f, height * 0.8f - y * 0.5f);
+		img.setPosition(width * 0.5f - x * 0.5f, height * 0.85f - y * 0.5f);
 		img.setVisible(false);
 		img.setScale(0f);
 		setupImageTween(img, 0f);
@@ -261,50 +357,14 @@ public class MainScreen implements Screen {
 		return img;
 	}
 	
-	private void playMusic() {
-		music[activeMusic].play();
-		totalTime = 100f;
-		lastCount = 5;
-		hideNumbers();
-	}
-
-	private void updateCount(final float delta) {
-		if (activeMusic < 1 || activeMusic > 15) return;
-        totalTime += delta;
-        if (totalTime > music[activeMusic].getPosition()) totalTime = 0f;
-        final int count = (int)Math.floor((totalTime % 2f) * 2f);
-        
-        if (lastCount != count) {
-			if (speakNumbers) sounds[count].play();
-        	if (showNumbers) {
-            	if (lastCount < 4) countActors[lastCount].setVisible(false);
-            	final Image img = countActors[count];
-            	img.setVisible(true);
-        		img.setScale(0f);
-    			Tween.to(img, ImageAccessor.SCALE_XY, 0.2f)
-    				.target(0.5f * textureScale, 0.5f * textureScale)
-    				.ease(Elastic.OUT)
-    				.start(tweenManager);
-        	}
-        }
-        
-        lastCount = count;
-	}
-	
-	private void hideNumbers() {
-		for (final Image img : countActors) img.setVisible(false);
-	}
-	
 	class ImageInputListener extends InputListener {
 		
 		private final Image image;
-		private final int mask;
-		private final int disable;
+		private final SoundType soundType;
 		
-		public ImageInputListener(final Image image, final int mask) {
+		public ImageInputListener(final Image image, final SoundType soundType) {
 			this.image = image;
-			this.mask = mask;
-			this.disable = 0x0F - mask;
+			this.soundType = soundType;
 		}
 
 		@Override
@@ -314,32 +374,37 @@ public class MainScreen implements Screen {
 				.ease(Elastic.OUT)
 				.start(tweenManager);
 
-			if (activeMusic > 0 && activeMusic < 16) {
-				music[activeMusic].stop();
-			}
-			
-			if ((activeMusic & mask) != 0) {
-				activeMusic &= disable;
-
+			if (unmutedSounds.contains(soundType)) {
+				unmutedSounds.remove(soundType);
+				mutedSounds.add(soundType);
+				
+				final int ord = soundType.ordinal();
+				sounds[ord].setVolume(soundIds[ord], 0f);
+				sounds[ord + KEY_OFFSET].setVolume(soundIds[ord + KEY_OFFSET], 0f);
+						
 				Tween.to(image, ImageAccessor.TINT, 0.25f)
 					.target(0.5f, 0.5f, 0.5f)
 					.ease(Cubic.INOUT)
 					.start(tweenManager);
 			} else {
-				activeMusic |= mask;
-
+				mutedSounds.remove(soundType);
+				unmutedSounds.add(soundType);
+				
+				final int ord = soundType.ordinal();
+				
+				if (firstKey) {
+					sounds[ord].setVolume(soundIds[ord], 1f);
+				} else {
+					sounds[ord + KEY_OFFSET].setVolume(soundIds[ord + KEY_OFFSET], 1f);
+				}
+						
 				Tween.to(image, ImageAccessor.TINT, 0.25f)
 					.target(1f, 1f, 1f)
 					.ease(Cubic.INOUT)
 					.start(tweenManager);
 			}
 			
-			if (activeMusic > 0 && activeMusic < 16) {
-				playMusic();
-			} else {
-				hideNumbers();
-			}
-			
+			if (unmutedSounds.size() == 0) hideNumbers();
 			return true;
 		}
 

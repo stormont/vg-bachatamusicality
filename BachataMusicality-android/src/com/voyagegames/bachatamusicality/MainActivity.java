@@ -14,8 +14,8 @@ public class MainActivity extends AndroidApplication {
         
         final AndroidApplicationConfiguration cfg = new AndroidApplicationConfiguration();
         cfg.useGL20 = false;
+        cfg.hideStatusBar = false;
         initialize(new MainGdxGame(), cfg);
-        
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     }
     

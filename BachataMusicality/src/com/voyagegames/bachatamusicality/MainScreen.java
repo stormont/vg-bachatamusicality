@@ -72,9 +72,13 @@ public class MainScreen implements Screen {
 	private int lastCount;
 	private Image ghostImage;
 	
-	public MainScreen() {
+	public MainScreen(final Sound[] sounds) {
 		Tween.registerAccessor(Sprite.class, new SpriteAccessor());
 		Tween.registerAccessor(Image.class, new ImageAccessor());
+		
+		for (int i = 0; i < sounds.length; i++) {
+			this.sounds[i] = sounds[i];
+		}
 		
 		final float w = Gdx.graphics.getWidth();
 		final float h = Gdx.graphics.getHeight();
@@ -103,19 +107,6 @@ public class MainScreen implements Screen {
 			regions[i] = new TextureRegion(textures[i], 0, 0, 128, 128);
 		}
 
-		sounds[0] = Gdx.audio.newSound(Gdx.files.internal("data/audio/1.wav"));
-		sounds[1] = Gdx.audio.newSound(Gdx.files.internal("data/audio/2.wav"));
-		sounds[2] = Gdx.audio.newSound(Gdx.files.internal("data/audio/3.wav"));
-		sounds[3] = Gdx.audio.newSound(Gdx.files.internal("data/audio/4.wav"));
-		sounds[4] = Gdx.audio.newSound(Gdx.files.internal("data/audio/bongo1.wav"));
-		sounds[5] = Gdx.audio.newSound(Gdx.files.internal("data/audio/guira1.wav"));
-		sounds[6] = Gdx.audio.newSound(Gdx.files.internal("data/audio/bass1.wav"));
-		sounds[7] = Gdx.audio.newSound(Gdx.files.internal("data/audio/guitar1.wav"));
-		sounds[8] = Gdx.audio.newSound(Gdx.files.internal("data/audio/bongo2.wav"));
-		sounds[9] = Gdx.audio.newSound(Gdx.files.internal("data/audio/guira2.wav"));
-		sounds[10] = Gdx.audio.newSound(Gdx.files.internal("data/audio/bass2.wav"));
-		sounds[11] = Gdx.audio.newSound(Gdx.files.internal("data/audio/guitar2.wav"));
-		
 		unmutedSounds.add(SoundType.BONGO);
 		unmutedSounds.add(SoundType.BASS);
 		unmutedSounds.add(SoundType.GUITAR);

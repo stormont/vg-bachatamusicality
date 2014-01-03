@@ -36,7 +36,7 @@ public class SplashScreen implements Screen {
 		camera = new OrthographicCamera(1f, h / w);
 		stage = new Stage();
 		
-		logo = new Texture(Gdx.files.internal("data/graphics/logo.png"));
+		logo = new Texture(Gdx.files.internal("data/graphics/logo-basic.png"));
 		logo.setFilter(TextureFilter.Linear, TextureFilter.Linear);
 
 		title = new Texture(Gdx.files.internal("data/graphics/title.png"));
@@ -52,7 +52,7 @@ public class SplashScreen implements Screen {
 			final float height,
 			final float fadeInDelay,
 			final float fadeOutDelay) {
-		final Image img = new Image(new TextureRegion(texture, 0, 0, 128, 128));
+		final Image img = new Image(new TextureRegion(texture, 0, 0, 256, 256));
 		final float x = img.getWidth();
 		final float y = img.getHeight();
 		

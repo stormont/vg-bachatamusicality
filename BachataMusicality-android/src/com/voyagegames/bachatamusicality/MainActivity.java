@@ -5,6 +5,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.WindowManager;
 import android.widget.Toast;
 
@@ -13,6 +14,8 @@ import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
 import com.voyagegames.java.tracking.AppEvent;
 import com.voyagegames.java.tracking.CustomEvent;
 import com.voyagegames.java.tracking.CustomSetting;
+import com.voyagegames.java.tracking.UserAction;
+import com.voyagegames.java.tracking.UserView;
 import com.voyagegames.java.tracking.Utilities;
 
 public class MainActivity extends AndroidApplication implements IHttpRequestCallback<String> {
@@ -52,7 +55,20 @@ public class MainActivity extends AndroidApplication implements IHttpRequestCall
 	@Override
 	protected void onResume() {
 		super.onResume();
+		Tracking.instance(this).trackUserView(new UserView("MainActivity.onResume", "view"));
 		if (game != null) game.resume();
+	}
+
+	@Override
+	protected void onDestroy() {
+		try {
+			Tracking.instance(this).trackAppEvent(new AppEvent("MainActivity.onDestroy", "onDestroy"));
+			new PushLogsAsyncTask(this).execute(new Void[] {});
+	    } catch (final Exception e) {
+	    	Log.e("GuidedSelectionActivity", "onDestroy exception", e);
+	    }
+		
+		super.onDestroy();
 	}
 
 	@Override
@@ -78,7 +94,20 @@ public class MainActivity extends AndroidApplication implements IHttpRequestCall
 		}
 	}
 	
+	@Override
+	public void onCancelled() {
+		Tracking.instance(this).trackCustomEvent(
+				new CustomEvent("MainActivity.onCancelled", "info"));
+	}
+
+	@Override
+	public void run() {}
+
+	@Override
+	public void onProgressUpdate(String... values) {}
+
 	private void promptToDownloadLatest() {
+		Tracking.instance(this).trackUserView(new UserView("MainActivity.promptToDownloadLatest", "view"));
 		updateAppDialog = new AlertDialog.Builder(this)
 			.setMessage(R.string.update_available_prompt)
 			.setPositiveButton(R.string.update_available_yes, new DialogInterface.OnClickListener() {
@@ -88,6 +117,8 @@ public class MainActivity extends AndroidApplication implements IHttpRequestCall
 						final Intent intent = new Intent(Intent.ACTION_VIEW);
 						intent.setData(Uri.parse("market://details?id=com.voyagegames.bachatamusicality"));
 						startActivity(intent);
+						Tracking.instance(MainActivity.this).trackUserAction(
+								new UserAction("MainActivity.promptToDownloadLatest", "update"));
 						game.pause();
 					} catch (final Exception e) {
 						Tracking.instance(MainActivity.this).trackAppEvent(
@@ -101,6 +132,8 @@ public class MainActivity extends AndroidApplication implements IHttpRequestCall
 				@Override
 				public void onClick(final DialogInterface dialog, final int id) {
 					updateAppDialog.cancel();
+					Tracking.instance(MainActivity.this).trackUserAction(
+							new UserAction("MainActivity.promptToDownloadLatest", "ignore"));
 				}
 			})
 			.create();
@@ -108,16 +141,4 @@ public class MainActivity extends AndroidApplication implements IHttpRequestCall
 		updateAppDialog.show();
 	}
 
-	@Override
-	public void onCancelled() {
-		Tracking.instance(this).trackCustomEvent(
-				new CustomEvent("MainActivity.onCancelled", "info"));
-	}
-
-	@Override
-	public void run() {}
-
-	@Override
-	public void onProgressUpdate(String... values) {}
-    
 }

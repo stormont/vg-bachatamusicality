@@ -9,12 +9,12 @@ import aurelienribon.tweenengine.equations.Cubic;
 import aurelienribon.tweenengine.equations.Elastic;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.GL10;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -28,7 +28,7 @@ import com.badlogic.gdx.utils.Timer.Task;
 
 public class MainScreen implements Screen {
 
-	private static final int NUMBERS_OFFSET = 6;
+	private static final int NUMBERS_OFFSET = 7;
 	private static final int KEY_OFFSET = SoundType.UNKNOWN.ordinal() - SoundType.BONGO.ordinal();
 	private static final float MUSIC_LENGTH = 16f * 0.5f;
 	
@@ -36,6 +36,7 @@ public class MainScreen implements Screen {
 		INSTRUMENT,
 		NUMBER,
 		VOCAL,
+		HELP,
 	}
 	
 	private enum SoundType {
@@ -50,13 +51,14 @@ public class MainScreen implements Screen {
 		UNKNOWN,
 	}
 	
+	private final MainGdxGame game;
 	private final TweenManager tweenManager = new TweenManager();
 	private final Stage stage;
 	private final OrthographicCamera camera;
 	private final SpriteBatch batch;
 	private final Texture backgroundTexture;
 	private final Sprite background;
-	private final Texture[] textures = new Texture[10];
+	private final Texture[] textures = new Texture[11];
 	private final Image[] countActors = new Image[4];
 	private final List<SoundType> mutedSounds = new ArrayList<SoundType>();
 	private final List<SoundType> unmutedSounds = new ArrayList<SoundType>();
@@ -72,7 +74,8 @@ public class MainScreen implements Screen {
 	private int lastCount;
 	private Image ghostImage;
 	
-	public MainScreen(final Sound[] sounds) {
+	public MainScreen(final MainGdxGame game, final Sound[] sounds) {
+		this.game = game;
 		Tween.registerAccessor(Sprite.class, new SpriteAccessor());
 		Tween.registerAccessor(Image.class, new ImageAccessor());
 		
@@ -85,20 +88,21 @@ public class MainScreen implements Screen {
 		
 		camera = new OrthographicCamera(1f, h / w);
 		batch = new SpriteBatch();
-		backgroundTexture = setupTexture("data/graphics/brushed-metal.png");
+		backgroundTexture = Utility.setupTexture("data/graphics/brushed-metal.png");
 		background = new Sprite(backgroundTexture);
 		background.setSize(w, h);
 		
-		textures[0] = setupTexture("data/graphics/guitar.png");
-		textures[1] = setupTexture("data/graphics/bass.png");
-		textures[2] = setupTexture("data/graphics/guira.png");
-		textures[3] = setupTexture("data/graphics/bongos.png");
-		textures[4] = setupTexture("data/graphics/numbers.png");
-		textures[5] = setupTexture("data/graphics/voice.png");
-		textures[6] = setupTexture("data/graphics/one.png");
-		textures[7] = setupTexture("data/graphics/two.png");
-		textures[8] = setupTexture("data/graphics/three.png");
-		textures[9] = setupTexture("data/graphics/four.png");
+		textures[0] = Utility.setupTexture("data/graphics/guitar.png");
+		textures[1] = Utility.setupTexture("data/graphics/bass.png");
+		textures[2] = Utility.setupTexture("data/graphics/guira.png");
+		textures[3] = Utility.setupTexture("data/graphics/bongos.png");
+		textures[4] = Utility.setupTexture("data/graphics/numbers.png");
+		textures[5] = Utility.setupTexture("data/graphics/voice.png");
+		textures[6] = Utility.setupTexture("data/graphics/info.png");
+		textures[7] = Utility.setupTexture("data/graphics/one.png");
+		textures[8] = Utility.setupTexture("data/graphics/two.png");
+		textures[9] = Utility.setupTexture("data/graphics/three.png");
+		textures[10] = Utility.setupTexture("data/graphics/four.png");
 		textureScale = w / textures[0].getWidth() * 0.5f;
 
 		final TextureRegion[] regions = new TextureRegion[NUMBERS_OFFSET];
@@ -112,20 +116,33 @@ public class MainScreen implements Screen {
 		unmutedSounds.add(SoundType.GUITAR);
 		unmutedSounds.add(SoundType.GUIRA);
 		
-		stage = new Stage();
+		stage = new Stage() {
+			
+	        @Override
+	        public boolean keyDown(final int keyCode) {
+	            if (keyCode == Keys.BACK) {
+	                Gdx.app.exit();
+	            }
+	            
+	            return super.keyDown(keyCode);
+	        }
+	        
+	    };
+	    
         Gdx.input.setInputProcessor(stage);
         
         final float xInc = stage.getWidth() * 0.2f;
         final float yInc = stage.getHeight() * 0.2f;
 		
-		setupActor(regions[0], xInc * 1.5f, yInc * 3f, SoundType.GUITAR, 0f, InputListenerType.INSTRUMENT);
-		setupActor(regions[1], xInc * 3.5f, yInc * 3f, SoundType.BASS, 0.1f, InputListenerType.INSTRUMENT);
-		setupActor(regions[2], xInc * 1.5f, yInc * 2f, SoundType.GUIRA, 0.2f, InputListenerType.INSTRUMENT);
-		setupActor(regions[3], xInc * 3.5f, yInc * 2f, SoundType.BONGO, 0.3f, InputListenerType.INSTRUMENT);
-		setupActor(regions[4], xInc * 1.5f, yInc * 1f, SoundType.UNKNOWN, 0.4f, InputListenerType.NUMBER);
-		setupActor(regions[5], xInc * 3.5f, yInc * 1f, SoundType.UNKNOWN, 0.5f, InputListenerType.VOCAL);
+		setupActor(regions[0], xInc * 1.5f, yInc * 3.25f, SoundType.GUITAR, 0f, InputListenerType.INSTRUMENT);
+		setupActor(regions[1], xInc * 3.5f, yInc * 3.25f, SoundType.BASS, 0.1f, InputListenerType.INSTRUMENT);
+		setupActor(regions[2], xInc * 1.5f, yInc * 2.25f, SoundType.GUIRA, 0.2f, InputListenerType.INSTRUMENT);
+		setupActor(regions[3], xInc * 3.5f, yInc * 2.25f, SoundType.BONGO, 0.3f, InputListenerType.INSTRUMENT);
+		setupActor(regions[4], xInc * 1.5f, yInc * 1.25f, SoundType.UNKNOWN, 0.4f, InputListenerType.NUMBER);
+		setupActor(regions[5], xInc * 3.5f, yInc * 1.25f, SoundType.UNKNOWN, 0.5f, InputListenerType.VOCAL);
 		
-		setupNumberActor(w, h);
+		setupInfoActor(xInc, yInc);
+		setupNumberActors(w, h);
 		showNumbers = true;
 		speakNumbers = false;
 	}
@@ -152,16 +169,18 @@ public class MainScreen implements Screen {
 		stage.setViewport(width, height, true);
 		background.setSize(width, height);
 		textureScale = width / textures[0].getWidth() * 0.5f;
-		setupNumberActor(width, height);
+		setupNumberActors(width, height);
 	}
 	
 	@Override
 	public void show() {
+        Gdx.input.setInputProcessor(stage);
 		playMusic();
 	}
 
 	@Override
 	public void resume() {
+        Gdx.input.setInputProcessor(stage);
 		playMusic();
 	}
 
@@ -292,12 +311,6 @@ public class MainScreen implements Screen {
 		for (final Image img : countActors) img.setVisible(false);
 	}
 
-	private Texture setupTexture(final String resource) {
-		final Texture t = new Texture(Gdx.files.internal(resource));
-		t.setFilter(TextureFilter.Linear, TextureFilter.Linear);
-		return t;
-	}
-
 	private void setupActor(
 			final TextureRegion region,
 			final float xOffset,
@@ -314,18 +327,7 @@ public class MainScreen implements Screen {
 		img.setPosition(xOffset - x * 0.5f, yOffset - y * 0.5f);
 		img.setScale(0f);
 		
-		switch (listenerType) {
-		case INSTRUMENT:
-			img.addListener(new ImageInputListener(img, soundType));
-			break;
-		case NUMBER:
-			img.addListener(new NumbersInputListener(img, false));
-			break;
-		case VOCAL:
-			img.addListener(new NumbersInputListener(img, true));
-			break;
-		}
-		
+		setupInputListener(img, listenerType, (Object)soundType);
 		setupImageTween(img, delay);
 		stage.addActor(img);
 	}
@@ -337,8 +339,24 @@ public class MainScreen implements Screen {
 			.delay(delay)
 			.start(tweenManager);
 	}
+	
+	private void setupInfoActor(final float xInc, final float yInc) {
+		final TextureRegion region = new TextureRegion(textures[6], 0, 0, 128, 128);
+		final Image img = new Image(region);
+		final float x = img.getWidth();
+		final float y = img.getHeight();
+		
+		img.setTouchable(Touchable.enabled);
+		img.setOrigin(x * 0.5f, y * 0.5f);
+		img.setPosition(xInc * 4f, yInc * 0.25f);
+		img.setScale(0f);
+		
+		setupInputListener(img, InputListenerType.HELP, null);
+		setupImageTween(img, 0f);
+		stage.addActor(img);
+	}
 
-	private void setupNumberActor(final float width, final float height) {
+	private void setupNumberActors(final float width, final float height) {
 		for (int i = 0; i < 4; i++) {
 			final TextureRegion region = new TextureRegion(textures[NUMBERS_OFFSET + i], 0, 0, 128, 128);
 			countActors[i] = setupNumberActor(region, width, height);
@@ -355,17 +373,36 @@ public class MainScreen implements Screen {
 		img.setPosition(width * 0.5f - x * 0.5f, height * 0.85f - y * 0.5f);
 		img.setVisible(false);
 		img.setScale(0f);
+		
+		setupInputListener(img, InputListenerType.NUMBER, null);
 		setupImageTween(img, 0f);
 		stage.addActor(img);
 		return img;
 	}
 	
-	class ImageInputListener extends InputListener {
+	private void setupInputListener(final Image img, final InputListenerType listenerType, final Object extra) {
+		switch (listenerType) {
+		case INSTRUMENT:
+			img.addListener(new ButtonInputListener(img, (SoundType)extra));
+			break;
+		case NUMBER:
+			img.addListener(new NumbersInputListener(img, false));
+			break;
+		case VOCAL:
+			img.addListener(new NumbersInputListener(img, true));
+			break;
+		case HELP:
+			img.addListener(new HelpInputListener(img));
+			break;
+		}
+	}
+	
+	class ButtonInputListener extends InputListener {
 		
 		private final Image image;
 		private final SoundType soundType;
 		
-		public ImageInputListener(final Image image, final SoundType soundType) {
+		public ButtonInputListener(final Image image, final SoundType soundType) {
 			this.image = image;
 			this.soundType = soundType;
 		}
@@ -418,6 +455,37 @@ public class MainScreen implements Screen {
 				.ease(Elastic.OUT)
 				.start(tweenManager);
 
+			super.touchUp(event, x, y, pointer, button);
+		}
+	
+	}
+	
+	class HelpInputListener extends InputListener {
+		
+		private final Image image;
+		
+		public HelpInputListener(final Image image) {
+			this.image = image;
+		}
+
+		@Override
+		public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+			Tween.to(image, ImageAccessor.SCALE_XY, 0.25f)
+				.target(1f * textureScale, 1f * textureScale)
+				.ease(Elastic.OUT)
+				.start(tweenManager);
+
+			return true;
+		}
+
+		@Override
+		public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+			Tween.to(image, ImageAccessor.SCALE_XY, 0.25f)
+				.target(0.5f * textureScale, 0.5f * textureScale)
+				.ease(Elastic.OUT)
+				.start(tweenManager);
+
+			game.showHelpScreen();
 			super.touchUp(event, x, y, pointer, button);
 		}
 	

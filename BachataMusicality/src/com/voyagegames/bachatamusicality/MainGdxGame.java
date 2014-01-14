@@ -8,6 +8,8 @@ public class MainGdxGame extends Game {
 
 	private final Sound[] sounds = new Sound[12];
 	
+	private MainScreen mainScreen;
+	
 	@Override
 	public void create() {
 		sounds[0] = Gdx.audio.newSound(Gdx.files.internal("data/audio/1.wav"));
@@ -27,7 +29,21 @@ public class MainGdxGame extends Game {
 	}
 	
 	public void splashScreenComplete() {
-		this.setScreen(new MainScreen(sounds));
+		this.setScreen(getMainScreen());
+	}
+	
+	public void helpScreenComplete() {
+		this.setScreen(getMainScreen());
+	}
+	
+	public void showHelpScreen() {
+		this.setScreen(new HelpScreen(this));
+	}
+	
+	private MainScreen getMainScreen() {
+		if (mainScreen != null) return mainScreen;
+		mainScreen = new MainScreen(this, sounds);
+		return mainScreen;
 	}
 	
 }

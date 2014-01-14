@@ -13,6 +13,7 @@ import com.google.analytics.tracking.android.GAServiceManager;
 import com.google.analytics.tracking.android.GoogleAnalytics;
 import com.voyagegames.java.tracking.AppSetting;
 import com.voyagegames.java.tracking.BasicAccumulator;
+import com.voyagegames.java.tracking.BasicAccumulatorConfig;
 import com.voyagegames.java.tracking.CustomEvent;
 import com.voyagegames.java.tracking.JsonDispatcher;
 import com.voyagegames.java.tracking.JsonDispatcherConfig;
@@ -58,7 +59,10 @@ public class Tracking extends Tracker<BasicAccumulator, JsonDispatcher> {
 			mGaInstance.setDebug(config.debugMode);
 			mGaTracker = mGaInstance.getTracker("UA-41937623-3");
 			
-			INSTANCE = new Tracking(new BasicAccumulator(), new JsonDispatcher(config));
+			final BasicAccumulatorConfig accConfig = new BasicAccumulatorConfig();
+			accConfig.maxTrackedItems = 500;
+			
+			INSTANCE = new Tracking(new BasicAccumulator(accConfig), new JsonDispatcher(config));
 		}
 		
 		return INSTANCE;

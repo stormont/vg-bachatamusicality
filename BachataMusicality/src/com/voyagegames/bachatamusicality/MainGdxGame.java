@@ -12,18 +12,18 @@ public class MainGdxGame extends Game {
 	
 	@Override
 	public void create() {
-		sounds[0] = Gdx.audio.newSound(Gdx.files.internal("data/audio/1.wav"));
-		sounds[1] = Gdx.audio.newSound(Gdx.files.internal("data/audio/2.wav"));
-		sounds[2] = Gdx.audio.newSound(Gdx.files.internal("data/audio/3.wav"));
-		sounds[3] = Gdx.audio.newSound(Gdx.files.internal("data/audio/4.wav"));
-		sounds[4] = Gdx.audio.newSound(Gdx.files.internal("data/audio/bongo1.wav"));
-		sounds[5] = Gdx.audio.newSound(Gdx.files.internal("data/audio/guira1.wav"));
-		sounds[6] = Gdx.audio.newSound(Gdx.files.internal("data/audio/bass1.wav"));
-		sounds[7] = Gdx.audio.newSound(Gdx.files.internal("data/audio/guitar1.wav"));
-		sounds[8] = Gdx.audio.newSound(Gdx.files.internal("data/audio/bongo2.wav"));
-		sounds[9] = Gdx.audio.newSound(Gdx.files.internal("data/audio/guira2.wav"));
-		sounds[10] = Gdx.audio.newSound(Gdx.files.internal("data/audio/bass2.wav"));
-		sounds[11] = Gdx.audio.newSound(Gdx.files.internal("data/audio/guitar2.wav"));
+		sounds[0] = Gdx.audio.newSound(Gdx.files.internal("data/audio/1.mp3"));
+		sounds[1] = Gdx.audio.newSound(Gdx.files.internal("data/audio/2.mp3"));
+		sounds[2] = Gdx.audio.newSound(Gdx.files.internal("data/audio/3.mp3"));
+		sounds[3] = Gdx.audio.newSound(Gdx.files.internal("data/audio/4.mp3"));
+		sounds[4] = Gdx.audio.newSound(Gdx.files.internal("data/audio/bongo1.mp3"));
+		sounds[5] = Gdx.audio.newSound(Gdx.files.internal("data/audio/guira1.mp3"));
+		sounds[6] = Gdx.audio.newSound(Gdx.files.internal("data/audio/bass1.mp3"));
+		sounds[7] = Gdx.audio.newSound(Gdx.files.internal("data/audio/guitar1.mp3"));
+		sounds[8] = Gdx.audio.newSound(Gdx.files.internal("data/audio/bongo2.mp3"));
+		sounds[9] = Gdx.audio.newSound(Gdx.files.internal("data/audio/guira2.mp3"));
+		sounds[10] = Gdx.audio.newSound(Gdx.files.internal("data/audio/bass2.mp3"));
+		sounds[11] = Gdx.audio.newSound(Gdx.files.internal("data/audio/guitar2.mp3"));
 		
 		this.setScreen(new SplashScreen(this));
 	}

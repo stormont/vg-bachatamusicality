@@ -120,7 +120,7 @@ public class MainScreen implements Screen {
 			
 	        @Override
 	        public boolean keyDown(final int keyCode) {
-	            if (keyCode == Keys.BACK) {
+	            if (keyCode == Keys.BACK || keyCode == Keys.ESCAPE) {
 	                Gdx.app.exit();
 	            }
 	            

@@ -101,6 +101,12 @@ public class MainActivity extends AndroidApplication implements IHttpRequestCall
 	}
 
 	@Override
+	public void onBackPressed() {
+		// Capture back button; handle through libGdx
+		//super.onBackPressed();
+	}
+
+	@Override
 	public void run() {}
 
 	@Override
